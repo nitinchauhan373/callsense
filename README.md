@@ -1,7 +1,3 @@
-# callsense
-CallSense AI is an AI-powered voice intelligence platform that transcribes, summarizes, and analyzes customer conversations using speech recognition and large language models.
-
-
 # CallSense AI
 
 CallSense AI is an AI-powered voice intelligence platform that transcribes, analyzes, and summarizes customer conversations in real time. It leverages Automatic Speech Recognition (ASR), Large Language Models (LLMs), and Natural Language Processing (NLP) to extract actionable insights, identify customer intent, detect sentiment, and generate accurate call summaries.
