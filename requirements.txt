@@ -1,0 +1,5 @@
+streamlit
+assemblyai
+groq
+python-dotenv
+pandas
