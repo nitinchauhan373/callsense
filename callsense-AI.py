@@ -271,7 +271,7 @@ def run_keyword_check(item: dict, rep_utterances: list[dict]) -> dict:
 def run_semantic_check(item: dict, rep_utterances: list[dict]) -> dict:
     rep_text = "\n".join(f"- {u['text']}" for u in rep_utterances)
 
-    prompt = f"""You are a call quality auditor reviewing a transcript of a REP's turns only.
+    prompt = f"You are a call quality auditor reviewing a transcript of a REP's turns only."
 
 Criteria to check: "{item['description']}"
 
