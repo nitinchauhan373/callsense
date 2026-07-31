@@ -118,8 +118,8 @@ st.markdown(
     @keyframes pulse {
         0%, 100% { opacity: 1; transform: scale(1); }
         50% { opacity: 0.4; transform: scale(0.7); }
-    }
-)
+    })
+
 
 ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
