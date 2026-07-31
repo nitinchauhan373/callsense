@@ -212,7 +212,7 @@ def transcript_to_utterances(transcript) -> list[dict]:
     Converts the transcript into a clean list of turns:
     [{"speaker": "A", "text": "...", "start_ms": ..., "end_ms": ...}, ...]
 
-    NOTE: AssemblyAI labels speakers as "A", "B" etc — it does NOT know
+    NOTE: AssemblyAI labels speakers as "A", "B" etc it does NOT know
     which one is the rep and which is the customer. We infer that next.
     """
     return [
