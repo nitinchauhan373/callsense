@@ -15,7 +15,6 @@ load_dotenv()
 
 st.set_page_config(page_title="CallSense AI", page_icon="📞", layout="wide")
 
-
 ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -107,7 +106,7 @@ def transcript_to_utterances(transcript) -> list[dict]:
     Converts the transcript into a clean list of turns:
     [{"speaker": "A", "text": "...", "start_ms": ..., "end_ms": ...}, ...]
 
-    NOTE: AssemblyAI labels speakers as "A", "B" etc it does NOT know
+    NOTE: AssemblyAI labels speakers as "A", "B" etc — it does NOT know
     which one is the rep and which is the customer. We infer that next.
     """
     return [
@@ -166,7 +165,7 @@ def run_keyword_check(item: dict, rep_utterances: list[dict]) -> dict:
 def run_semantic_check(item: dict, rep_utterances: list[dict]) -> dict:
     rep_text = "\n".join(f"- {u['text']}" for u in rep_utterances)
 
-    prompt = f"You are a call quality auditor reviewing a transcript of a REP's turns only."
+    prompt = f"""You are a call quality auditor reviewing a transcript of a REP's turns only.
 
 Criteria to check: "{item['description']}"
 
