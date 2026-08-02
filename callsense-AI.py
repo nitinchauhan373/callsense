@@ -8,31 +8,218 @@ from dotenv import load_dotenv
 import assemblyai as aai
 from groq import Groq
 
-# ----------------------------------------------------------------------------
-# Setup
-# ----------------------------------------------------------------------------
+# ==============================================================================
+# App configuration
+# ==============================================================================
 load_dotenv()
 
-st.set_page_config(page_title="CallSense AI", page_icon="📞", layout="wide")
+st.set_page_config(
+    page_title="CallSense AI",
+    page_icon="📞",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 if not ASSEMBLYAI_API_KEY or not GROQ_API_KEY:
     st.error(
-        "Missing ASSEMBLYAI_API_KEY and/or GROQ_API_KEY. "
-        "Add them to a .env file in this folder before running the app."
+        "Missing **ASSEMBLYAI_API_KEY** and/or **GROQ_API_KEY**. "
+        "Add them to a `.env` file in this folder before running the app."
     )
     st.stop()
 
 aai.settings.api_key = ASSEMBLYAI_API_KEY
 groq_client = Groq(api_key=GROQ_API_KEY)
 
-# ----------------------------------------------------------------------------
+LLM_MODEL = "llama-3.3-70b-versatile"
+
+# ==============================================================================
+# Theming — custom CSS
+# ==============================================================================
+CUSTOM_CSS = """
+<style>
+    #MainMenu, footer, header {visibility: hidden;}
+
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+        max-width: 1150px;
+    }
+
+    /* ---- Hero header ---- */
+    .cs-hero {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    .cs-hero-icon {
+        font-size: 2.1rem;
+        line-height: 1;
+    }
+    .cs-hero-title {
+        font-size: 2.1rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 0;
+        color: #101828;
+    }
+    .cs-hero-subtitle {
+        color: #667085;
+        font-size: 1rem;
+        margin: 0.15rem 0 1.6rem 0;
+    }
+
+    /* ---- Sidebar ---- */
+    section[data-testid="stSidebar"] {
+        background: #101828;
+    }
+    section[data-testid="stSidebar"] * {
+        color: #E4E7EC !important;
+    }
+    .cs-sidebar-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .cs-check-card {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 10px;
+        padding: 0.65rem 0.8rem;
+        margin-bottom: 0.55rem;
+    }
+    .cs-check-card .cs-check-name {
+        font-weight: 600;
+        font-size: 0.88rem;
+        margin-bottom: 0.15rem;
+    }
+    .cs-check-card .cs-check-desc {
+        font-size: 0.78rem;
+        color: #98A2B3 !important;
+        line-height: 1.35;
+    }
+    .cs-badge {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        margin-bottom: 0.35rem;
+    }
+    .cs-badge-keyword { background: #1D2939; color: #A6F4C5 !important; }
+    .cs-badge-semantic { background: #1D2939; color: #B2CCFF !important; }
+
+    /* ---- Upload card ---- */
+    .cs-panel {
+        background: #FFFFFF;
+        border: 1px solid #EAECF0;
+        border-radius: 14px;
+        padding: 1.4rem 1.5rem;
+        box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+        margin-bottom: 1.4rem;
+    }
+
+    /* ---- Score summary ---- */
+    .cs-score-wrap {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+    }
+    .cs-score-card {
+        flex: 1;
+        border-radius: 14px;
+        padding: 1.1rem 1.3rem;
+        border: 1px solid #EAECF0;
+        background: #FFFFFF;
+    }
+    .cs-score-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #667085;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.35rem;
+    }
+    .cs-score-value {
+        font-size: 1.7rem;
+        font-weight: 800;
+        color: #101828;
+    }
+    .cs-score-value.good { color: #067647; }
+    .cs-score-value.warn { color: #B54708; }
+    .cs-score-value.bad { color: #B42318; }
+
+    /* ---- Result rows ---- */
+    .cs-result-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        border: 1px solid #EAECF0;
+        margin-bottom: 0.6rem;
+        background: #FFFFFF;
+    }
+    .cs-result-row.pass { border-left: 4px solid #12B76A; }
+    .cs-result-row.fail { border-left: 4px solid #F04438; }
+    .cs-result-icon { font-size: 1.15rem; margin-top: 0.05rem; }
+    .cs-result-title { font-weight: 700; color: #101828; font-size: 0.95rem; }
+    .cs-result-desc { color: #667085; font-size: 0.85rem; margin-top: 0.1rem; }
+    .cs-result-evidence {
+        margin-top: 0.45rem;
+        font-size: 0.82rem;
+        font-style: italic;
+        color: #475467;
+        background: #F9FAFB;
+        border-radius: 8px;
+        padding: 0.5rem 0.7rem;
+        border: 1px dashed #D0D5DD;
+    }
+
+    /* ---- Transcript bubbles ---- */
+    .cs-bubble-row { display: flex; margin-bottom: 0.55rem; }
+    .cs-bubble-row.rep { justify-content: flex-start; }
+    .cs-bubble-row.customer { justify-content: flex-end; }
+    .cs-bubble {
+        max-width: 72%;
+        padding: 0.55rem 0.85rem;
+        border-radius: 14px;
+        font-size: 0.87rem;
+        line-height: 1.4;
+    }
+    .cs-bubble.rep { background: #EFF4FF; color: #1D2939; border-bottom-left-radius: 3px; }
+    .cs-bubble.customer { background: #F2F4F7; color: #1D2939; border-bottom-right-radius: 3px; }
+    .cs-bubble-speaker {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 0.15rem;
+        opacity: 0.6;
+    }
+
+    .stButton>button {
+        border-radius: 9px;
+        font-weight: 600;
+        padding: 0.55rem 1.4rem;
+    }
+</style>
+"""
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+# ==============================================================================
 # QA checklist
 # type = "keyword"  -> fast regex/substring match, good for greeting/closing phrases
 # type = "semantic" -> sent to the LLM for a yes/no judgment, good for fuzzy criteria
-# ----------------------------------------------------------------------------
+# ==============================================================================
 qa_checklist = [
     {
         "id": "greeting",
@@ -82,10 +269,18 @@ qa_checklist = [
     },
 ]
 
+CHECKLIST_LABELS = {
+    "greeting": "Greeting",
+    "identity_verification": "Identity Verification",
+    "reason_for_call": "Reason For Call",
+    "asked_required_question": "Payment Preference Asked",
+    "closing": "Proper Closing",
+}
 
-# ----------------------------------------------------------------------------
-# Core pipeline functions (unchanged logic from the notebook)
-# ----------------------------------------------------------------------------
+
+# ==============================================================================
+# Core pipeline functions (logic unchanged)
+# ==============================================================================
 def transcribe_call(audio_path: str):
     """
     Transcribes an audio file with speaker diarization.
@@ -178,7 +373,7 @@ EVIDENCE: the exact quote from the rep's utterances that supports your answer (o
 """
 
     response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=LLM_MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
     )
@@ -223,27 +418,136 @@ def score_summary(df: pd.DataFrame) -> tuple[int, int, float]:
     return passed, total, pct
 
 
-# ----------------------------------------------------------------------------
-# Streamlit UI
-# ----------------------------------------------------------------------------
-st.title("📞 CallSense AI — Call QA Analyzer")
-st.caption("Upload a call recording to check it against the QA checklist.")
+def score_tier(pct: float) -> str:
+    if pct >= 80:
+        return "good"
+    if pct >= 50:
+        return "warn"
+    return "bad"
 
-with st.sidebar:
-    st.header("QA Checklist")
-    for item in qa_checklist:
-        st.markdown(f"- **{item['id']}** ({item['type']}): {item['description']}")
 
-uploaded_file = st.file_uploader(
-    "Upload a call recording",
-    type=["mp3", "wav", "m4a", "mp4"],
-    help="The rep is assumed to be whoever speaks first in the recording.",
+# ==============================================================================
+# Render helpers
+# ==============================================================================
+def render_sidebar():
+    with st.sidebar:
+        st.markdown('<div class="cs-sidebar-title">📋 QA Checklist</div>', unsafe_allow_html=True)
+        for item in qa_checklist:
+            badge_class = "cs-badge-keyword" if item["type"] == "keyword" else "cs-badge-semantic"
+            label = CHECKLIST_LABELS.get(item["id"], item["id"])
+            st.markdown(
+                f"""
+                <div class="cs-check-card">
+                    <span class="cs-badge {badge_class}">{item['type']}</span>
+                    <div class="cs-check-name">{label}</div>
+                    <div class="cs-check-desc">{item['description']}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        st.markdown("---")
+        st.caption("Transcription: AssemblyAI · Reasoning: Groq (Llama 3.3 70B)")
+
+
+def render_score_cards(passed: int, total: int, pct: float):
+    tier = score_tier(pct)
+    st.markdown(
+        f"""
+        <div class="cs-score-wrap">
+            <div class="cs-score-card">
+                <div class="cs-score-label">Checks Passed</div>
+                <div class="cs-score-value {tier}">{passed} / {total}</div>
+            </div>
+            <div class="cs-score-card">
+                <div class="cs-score-label">QA Score</div>
+                <div class="cs-score-value {tier}">{pct}%</div>
+            </div>
+            <div class="cs-score-card">
+                <div class="cs-score-label">Overall Result</div>
+                <div class="cs-score-value {tier}">{"PASS" if pct >= 80 else "REVIEW" if pct >= 50 else "FAIL"}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_results(report_df: pd.DataFrame):
+    for _, row in report_df.iterrows():
+        status_class = "pass" if row["passed"] else "fail"
+        icon = "✅" if row["passed"] else "❌"
+        label = CHECKLIST_LABELS.get(row["checklist_id"], row["checklist_id"])
+        evidence_html = (
+            f'<div class="cs-result-evidence">“{row["evidence"]}”</div>' if row["evidence"] else ""
+        )
+        st.markdown(
+            f"""
+            <div class="cs-result-row {status_class}">
+                <div class="cs-result-icon">{icon}</div>
+                <div style="flex:1;">
+                    <div class="cs-result-title">{label}</div>
+                    <div class="cs-result-desc">{row['description']}</div>
+                    {evidence_html}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_transcript(utterances: list[dict]):
+    for u in utterances:
+        role = u.get("role", "customer")
+        speaker_label = "Rep" if role == "rep" else "Customer"
+        st.markdown(
+            f"""
+            <div class="cs-bubble-row {role}">
+                <div class="cs-bubble {role}">
+                    <div class="cs-bubble-speaker">{speaker_label}</div>
+                    {u['text']}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+# ==============================================================================
+# Page layout
+# ==============================================================================
+st.markdown(
+    """
+    <div class="cs-hero">
+        <div class="cs-hero-icon">📞</div>
+        <h1 class="cs-hero-title">CallSense AI</h1>
+    </div>
+    <p class="cs-hero-subtitle">
+        Upload a collections call recording and automatically score it against your QA checklist.
+    </p>
+    """,
+    unsafe_allow_html=True,
 )
 
-analyze_clicked = st.button("Analyze call", type="primary", disabled=uploaded_file is None)
+render_sidebar()
+
+with st.container():
+    st.markdown('<div class="cs-panel">', unsafe_allow_html=True)
+    col_upload, col_button = st.columns([4, 1], vertical_alignment="bottom")
+
+    with col_upload:
+        uploaded_file = st.file_uploader(
+            "Upload a call recording",
+            type=["mp3", "wav", "m4a", "mp4"],
+            help="The rep is assumed to be whoever speaks first in the recording.",
+            label_visibility="collapsed",
+        )
+    with col_button:
+        analyze_clicked = st.button(
+            "Analyze Call", type="primary", disabled=uploaded_file is None, use_container_width=True
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_clicked and uploaded_file is not None:
-    # Save the uploaded file to a temp path AssemblyAI can read from disk
     suffix = os.path.splitext(uploaded_file.name)[1] or ".mp3"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(uploaded_file.getvalue())
@@ -261,35 +565,14 @@ if analyze_clicked and uploaded_file is not None:
         passed, total, pct = score_summary(report_df)
 
         st.subheader("Results")
-        st.metric("QA Score", f"{passed}/{total} passed", f"{pct}%")
+        render_score_cards(passed, total, pct)
+        render_results(report_df)
 
-        st.dataframe(
-            report_df.rename(columns={
-                "checklist_id": "Check",
-                "description": "Description",
-                "passed": "Passed",
-                "evidence": "Evidence",
-            }),
-            use_container_width=True,
-            hide_index=True,
-        )
-
-        with st.expander("View full transcript"):
-            transcript_df = pd.DataFrame(utterances)
-            st.dataframe(
-                transcript_df.rename(columns={
-                    "speaker": "Speaker",
-                    "text": "Text",
-                    "start_ms": "Start (ms)",
-                    "end_ms": "End (ms)",
-                    "role": "Role",
-                }),
-                use_container_width=True,
-                hide_index=True,
-            )
+        with st.expander("📝 View full transcript"):
+            render_transcript(utterances)
 
         st.download_button(
-            "Download QA report (CSV)",
+            "⬇️ Download QA Report (CSV)",
             report_df.to_csv(index=False).encode("utf-8"),
             file_name="qa_report.csv",
             mime="text/csv",
@@ -302,4 +585,4 @@ if analyze_clicked and uploaded_file is not None:
         os.remove(audio_path)
 
 elif uploaded_file is None:
-    st.info("Upload an audio file above, then click **Analyze call** to run the QA check.")
+    st.info("Upload an audio file above, then click **Analyze Call** to run the QA check.")
